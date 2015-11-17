@@ -43,7 +43,11 @@ safeDec (FS x) = promote x
 
 -- this should return the maximum element in the finite set
 safeInc : Fin n -> Fin n
-safeInc f = ?saferhs
+safeInc {n} f = ?saferhs
+
+lastV : Vect (S n) a -> a
+lastV (x :: []) = x
+lastV (x :: (y :: xs)) = lastV (y :: xs)
 
 filterV : (a -> Bool) -> Vect n a -> (m ** (Vect m a))
 filterV f [] = (0 ** [])
