@@ -1,7 +1,10 @@
-
 -- Local Variables:
 -- idris-load-packages: ("prelude" "effects" "contrib" "base")
 -- End:
+
+import Data.Vect
+import Effects
+import Effect.State
 
 
 -- Here we're going to include some algorithms related to Huth and Ryan's book, for practice
@@ -91,3 +94,30 @@ nnfTocnf : NNF -> CNF
 nnfTocnf (NConj x y) = nnfTocnf x ++ nnfTocnf y
 nnfTocnf (NDisj x y) = disjLift x y
 nnfTocnf (NLit x) = [[x]]
+
+isValid : Formula -> Bool
+isValid = cnfValid . nnfTocnf . toNNF . impFree
+
+-- okay then!
+
+{- 
+  Now let's get to horn clauses. These are going to be built up inductively as
+-}
+
+data P = PBot | PTop | PLit Lit
+
+data Clause p = CImp (List p) p
+
+Horn : Type -> Type
+Horn p = List (Clause p)
+
+blah : Clause P -> List P
+blah (CImp xs x) = xs ++ [x]
+
+collectPs : Horn P -> List P
+collectPs = concat . map blah
+
+data IsMarked = Marked P | Unmarked P
+
+satHorn : Horn (Fin n) -> Eff Bool [STATE (Vect n IsMarked)]
+satHorn h = ?rhs
