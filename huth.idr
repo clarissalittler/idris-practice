@@ -40,12 +40,54 @@ instance Eq Lit where
   (NegAtom x) == (NegAtom y) = x == y
   x == y = False
 
-cnf : Type
-cnf = List (List Lit) -- the outer ones are conjunctions the inner lists are disjunctions
+CNF : Type
+CNF = List (List Lit) -- the outer ones are conjunctions the inner lists are disjunctions
 
 aux : List Lit -> Bool
 aux [] = True
 aux (x :: xs) = (elem (negLit x) xs) || (aux xs)
 
-cnfValid : List (List Lit) -> Bool
+-- Okay I'm really confused why it can't figure out the type instance if I put cnf instead of List (List Lit).
+cnfValid : CNF -> Bool
 cnfValid c = all aux c
+
+data ImpFree = IConj ImpFree ImpFree | IDisj ImpFree ImpFree | INeg ImpFree
+             | IAtom String
+             
+impFree : Formula -> ImpFree
+impFree (Atom x) = (IAtom x)
+impFree (Disj x y) = IDisj (impFree x) (impFree y)
+impFree (Conj x y) = IConj (impFree x) (impFree y)
+impFree (Imp x y) = IDisj (INeg (impFree x)) (impFree y)
+impFree (Neg x) = INeg (impFree x)
+
+data NNF = NConj NNF NNF | NDisj NNF NNF | NLit Lit
+
+toNNF : ImpFree -> NNF
+toNNF (IConj x y) = NConj (toNNF x) (toNNF y)
+toNNF (IDisj x y) = NDisj (toNNF x) (toNNF y)
+toNNF (INeg (IConj x y)) = NDisj (toNNF arg1)
+                                 (toNNF arg2)
+    where arg1 = assert_smaller (INeg (IConj x y)) (INeg x)
+          arg2 = assert_smaller (INeg (IConj x y)) (INeg y)
+
+toNNF (INeg (IDisj x y)) = NConj (toNNF (assert_smaller (INeg (IDisj x y)) (INeg x)))
+                                  (toNNF (assert_smaller (INeg (IDisj x y)) (INeg y)))
+toNNF (INeg (INeg x)) = toNNF x
+toNNF (INeg (IAtom x)) = NLit (NegAtom x)
+toNNF (IAtom x) = NLit (PosAtom x)
+
+accumLits : NNF -> List Lit
+accumLits (NConj x y) = accumLits x ++ accumLits y -- this case won't happen in disjLift
+accumLits (NDisj x y) = accumLits x ++ accumLits y
+accumLits (NLit x) = [x]
+
+disjLift : (x : NNF) -> (y : NNF) -> List (List Lit) 
+disjLift (NConj x1 x2) y = (disjLift x1 y) ++ (disjLift x2 y)
+disjLift x (NConj y1 y2) = (disjLift x y1) ++ (disjLift x y2)
+disjLift x y = [(accumLits x) ++ (accumLits y)]
+
+nnfTocnf : NNF -> CNF
+nnfTocnf (NConj x y) = nnfTocnf x ++ nnfTocnf y
+nnfTocnf (NDisj x y) = disjLift x y
+nnfTocnf (NLit x) = [[x]]
