@@ -119,5 +119,29 @@ collectPs = concat . map blah
 
 data IsMarked = Marked P | Unmarked P
 
-satHorn : Horn (Fin n) -> Eff Bool [STATE (Vect n IsMarked)]
-satHorn h = ?rhs
+satHorn : Horn (Fin n) -> Vect n IsMarked -> Bool
+satHorn h v = ?rhs
+
+{- 
+  Now the problem here is that the Huth and Ryan algorithm for this is a while loop that translates rather uglily from an imperative language to a functional one.
+  
+  Now, we could do a translation of the loop with just recursion, yes
+-}
+
+markTop : IsMarked -> IsMarked
+markTop (Marked x) = (Marked x)
+markTop a@(Unmarked PBot) = a
+markTop (Unmarked PTop) = Marked PTop
+markTop a@(Unmarked (PLit x)) = a
+
+isDone : Horn (Fin n) -> Bool
+isDone h = ?fdas
+
+notBot : IsMarked -> Bool
+notBot m = ?asdf
+
+uglySatAux : (h : List (Clause (Fin n))) ->  Vect n IsMarked -> Bool
+uglySatAux h vs = if (isDone h) then (and (map notBot vs)) else ?blee
+
+uglySat : Horn (Fin n) -> Vect n IsMarked -> Bool
+uglySat h v = uglySatAux h (map markTop v)
