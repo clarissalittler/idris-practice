@@ -13,7 +13,7 @@ preamble : Nat -> Nat -> String
 preamble x y = unlines ["P3",show x ++ " " ++ show y]
 
 PPM : Nat -> Nat -> Type
-PPM x y = Vect x (Vect y (Int,Int,Int))
+PPM x y = Vect y (Vect x (Int,Int,Int))
 
 auxFun : (Int,Int,Int) -> String
 auxFun (r,g,b) = (show r) ++ " " ++ (show g) ++ " " ++ (show b)
@@ -34,6 +34,9 @@ ppmToFile p file = writeFile file (ppmToString p)
 
 -- so we'll do the same thing as the original Haskell code I saw and have a function from doubles
 -- to colors and then, being given dimensions to render, create an actual PPM type
+coords : Double -> Double -> Double -> Double -> (xsample : Nat) -> (ysample : Nat) -> Vect ysample (Vect xsample (Double, Double))
+coords x y delx dely xsample Z = []
+coords x y delx dely xsample (S k) = (?createRow (S k)) 
 
-funToVector : (Double -> Double -> (Int,Int,Int)) -> Double -> Double -> Double -> Double -> (xsample : Nat) -> (ysample : Nat) -> PPM x y
-funToVector f startx starty delx dely xsample ysample = ?rhs
+funToVector : (Double -> Double -> (Int,Int,Int)) -> Double -> Double -> Double -> Double -> (xsample : Nat) -> (ysample : Nat) -> PPM xsample ysample
+funToVector f startx starty delx dely xsample ysample = map (map (uncurry f)) (coords startx starty delx dely xsample ysample)
